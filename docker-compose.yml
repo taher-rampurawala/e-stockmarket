@@ -1,0 +1,47 @@
+version: "3"
+services:
+  mongodb:
+    image: 'mongo'
+    container-name: 'my-mongo-container'
+    networks:
+      - mongo-network
+    environment:
+      - MONGO_INITDB_DATABASE=stockmarket
+      - MONGO_INITDB_ROOT_USERNAME=taher
+      - MONGO_INITDB_ROOT_PASSWORD=taherhi5
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+      - ./mongo-volume:/data/db
+    ports:
+      - '27017-27019:27017-27019'
+      
+  stock-service:
+    image: stock-service
+    ports:
+      - "9995:8082"
+    networks:
+      - mongo-network
+    depends_on:
+      - mongodb
+      
+  company-service:
+    image: company-service
+    ports:
+      - "9996:8081"
+    networks:
+      - mongo-network
+    depends_on:
+      - mongodb 
+       
+  eureka-service:
+    image: eureka-service
+    ports:
+      - "8761:8761"
+      
+  zuul-service:
+    image: zuul-service
+    ports:
+      - "8762:8762"
+
+networks:
+  mongo-network:
