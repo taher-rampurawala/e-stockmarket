@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -26,6 +27,16 @@ public class CompanyService {
 
 	@Autowired
 	private RestTemplate restTemplate;
+	
+	@KafkaListener(groupId = "compStockPojo-1", topics = "compStockPojo", containerFactory = "companyKafkaListenerContainerFactory")
+	public Response getJsonMsgFromTopic(Company company) {
+		return register(company);
+	}
+	
+	@KafkaListener(groupId = "msgString-1", topics = "msgString", containerFactory = "kafkaListenerContainerFactory")
+	public void  getMsgFromTopic(String companyCode) {
+		deleteCompanyWithStock(companyCode);
+	}
 
 	public Response register(Company company) {
 		Response response = new Response();
@@ -40,11 +51,11 @@ public class CompanyService {
 
 			Company savedCompnay = companyRepository.save(newCompany);
 			if (savedCompnay != null) {
-				response.setMessage("Compnay saved successfully!!");
+				response.setMessage("Company saved successfully!!");
 				response.setStatus(200);
 			} else {
 				response.setStatus(409);
-				response.setMessage("Comppany not saved successfully!!");
+				response.setMessage("Company not saved successfully!!");
 			}
 
 		}
@@ -101,9 +112,8 @@ public class CompanyService {
 			headers.setBasicAuth("admin", "password");
 			headers.set("Accept", MediaType.APPLICATION_JSON_VALUE);
 			HttpEntity<String> httpEntity = new HttpEntity<String>(headers);
-			restTemplate.exchange("http://localhost:8082/api/v1.0/market/stock/delete" +companyCode,
+			restTemplate.exchange("http://localhost:8082/api/v1.0/market/stock/delete/" +companyCode,
 					HttpMethod.DELETE, httpEntity, Stock.class);
 		}
 	}
-
 }

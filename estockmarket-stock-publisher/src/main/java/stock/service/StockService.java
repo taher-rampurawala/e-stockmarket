@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 import stock.model.CompanyStockDto;
@@ -19,20 +18,6 @@ public class StockService {
 
 	@Autowired
 	StockRepository stockRepository;
-	
-	@KafkaListener(groupId = "compStockPojo1-1", topics = "compStockPojo1", containerFactory = "stockKafkaListenerContainerFactory")
-	public Response getJsonMsgFromTopic(Stock stock) {
-		return saveAndupdateStock(stock.getCompanyCode(), stock);
-	}
-	
-	@KafkaListener(groupId = "msgString-2", topics = "msgString", containerFactory = "kafkaListenerContainerFactory")
-	public void  getMsgFromTopic(String companyCode) {
-		deleteCompanyWithStock(companyCode);
-	}
-	
-	public Stock findByCompanyCode(String companyCode) {
-		return stockRepository.findByCompanyCode(companyCode);
-	}
 
 	public Response saveAndupdateStock(String companyCode, Stock newStock) {
 		Response response = new Response();
@@ -62,36 +47,6 @@ public class StockService {
 			response.setMessage("Stock created successfully");
 		}
 		return response;
-	}
-
-
-	public CompanyStockDto getStockDetailsForCompany(String companyCode, String startdate, String enddate) throws ParseException {
-		CompanyStockDto companyStockDto = new CompanyStockDto();
-		
-		Date stdate=new SimpleDateFormat("yyyy-MM-dd").parse(startdate); 
-		Date edate =new SimpleDateFormat("yyyy-MM-dd").parse(enddate); 
-
-		List<Stock> stocks = stockRepository.findStocksByCompanyCode(companyCode,stdate,edate);
-		if(stocks.isEmpty())
-			return null;
-		double max = Double.MIN_VALUE;
-		double min = Double.MAX_VALUE;
-		double sum = 0.0;
-		for(Stock stock: stocks) {
-			double price = stock.getCurrentPrice();
-			sum+=price;
-			if(price < min)
-				min = price;
-			if(price > max)
-				max = price;
-			
-		}
-		double avg = sum/(stocks.size());
-		companyStockDto.setMin(min);
-		companyStockDto.setAvg(avg);
-		companyStockDto.setMax(max);
-		companyStockDto.setStock(stocks);
-		return companyStockDto;
 	}
 
 	public void deleteCompanyWithStock(String companyCode) {
